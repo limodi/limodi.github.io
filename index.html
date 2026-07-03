@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物理安培力-左手定则</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .carousel-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        .carousel-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+            background: #000000;
+        }
+        .carousel-slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+        .slide-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* 左右箭头 */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 9999;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            font-family: 'Segoe UI', sans-serif;
+            user-select: none;
+        }
+        .nav-arrow:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            transform: translateY(-50%) scale(1.05);
+        }
+        .nav-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        .nav-arrow-left { left: 20px; }
+        .nav-arrow-right { right: 20px; }
+
+        .page-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            gap: 10px;
+        }
+        .page-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        .page-dot.active {
+            background: #ffffff;
+            transform: scale(1.2);
+            box-shadow: 0 0 16px rgba(255, 255, 255, 0.2);
+        }
+        .page-dot:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* ===== 3D 页面 ===== */
+        #slide-3d .control-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 340px;
+            max-height: calc(100vh - 40px);
+            background: rgba(15, 15, 15, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            z-index: 10;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+        #slide-3d .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff, #8888ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        /* 左手定则定义框 */
+#slide-3d .rule-box {
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.08), inset 0 0 30px rgba(255, 215, 0, 0.02);
+    animation: ruleGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes ruleGlow {
+    0%, 100% {
+        border-color: rgba(255, 215, 0, 0.4);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.05);
+    }
+    50% {
+        border-color: rgba(255, 215, 0, 0.9);
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.2), inset 0 0 30px rgba(255, 215, 0, 0.05);
+    }
+}
+
+#slide-3d .rule-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+#slide-3d .rule-text {
+    font-size: 13px;
+    color: #dddddd;
+    line-height: 1.6;
+}
+        #slide-3d .control-panel h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            -webkit-text-fill-color: #ffffff;
+        }
+        #slide-3d .control-panel .subtitle {
+            font-size: 12px;
+            color: #aaaaaa;
+            line-height: 1.4;
+            -webkit-text-fill-color: #aaaaaa;
+        }
+        #slide-3d .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        #slide-3d .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #aaaaaa;
+        }
+        #slide-3d .value-display {
+            font-family: monospace;
+            font-weight: bold;
+        }
+        #slide-3d input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+        #slide-3d input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        #slide-3d input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        #slide-3d .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        #slide-3d .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        #slide-3d .btn-primary {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+        }
+        #slide-3d .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+        #slide-3d .legend-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        #slide-3d .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+        #slide-3d .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        #slide-3d .instruction-tip {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        #slide-3d .warning-banner {
+            background: rgba(255, 61, 0, 0.15);
+            border: 1px solid rgba(255, 61, 0, 0.3);
+            color: #ff8a65;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.4;
+            display: none;
+        }
+        #slide-3d .hud-label {
+            position: absolute;
+            padding: 4px 8px;
+            background: rgba(5, 5, 5, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: bold;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 5;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ===== 磁场（里/外）页面 ===== */
+        #slide-field {
+            background: #050507;
+        }
+        #slide-field .field-control-panel {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 320px;
+            z-index: 9999;
+            background: rgba(18, 18, 24, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+        #slide-field .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #slide-field .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #86868b;
+        }
+        #slide-field .segmented-control {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            padding: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+        #slide-field .segment-btn {
+            background: transparent;
+            border: none;
+            color: #86868b;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            padding: 8px 0;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        #slide-field .segment-btn:hover {
+            color: #f5f5f7;
+        }
+        #slide-field .segment-btn.active {
+            background: #ffffff;
+            color: #000000;
+            font-weight: 500;
+        }
+        #slide-field .toggle-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #f5f5f7;
+            padding: 12px;
+            border-radius: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        #slide-field .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        #slide-field .toggle-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #ffffff;
+        }
+        #slide-field .toggle-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #86868b;
+            transition: all 0.2s;
+        }
+        #slide-field .toggle-btn.active .toggle-indicator {
+            background: #ffffff;
+            box-shadow: 0 0 8px #ffffff;
+        }
+        #slide-field .action-btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        #slide-field .action-btn:hover {
+            background: #e5e5ea;
+        }
+        #slide-field .view-indicator {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            background: rgba(18, 18, 24, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 30px;
+            padding: 8px 16px;
+            font-size: 11px;
+            color: #86868b;
+            pointer-events: none;
+            letter-spacing: 0.05em;
+        }
+
+        /* ===== 通电导线 2D页面 ===== */
+        #slide-2d .container {
+            background: rgba(15, 15, 15, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            padding: 24px 28px 28px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            max-width: 780px;
+            width: 100%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+        }
+        #slide-2d .container h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f0f0f0;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            padding-bottom: 12px;
+        }
+        #slide-2d .container h1 span { color: #e07020; }
+        #slide-2d .canvas-wrapper {
+            background: #1a1a2e;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 8px;
+            margin-bottom: 18px;
+        }
+        #slide-2d canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            background: #16213e;
+            border-radius: 10px;
+        }
+        #slide-2d .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px 20px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 48px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        #slide-2d .ctrl-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        #slide-2d .btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 5px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            color: #ddd;
+        }
+        #slide-2d .btn:hover { border-color: #e07020; color: #e07020; }
+        #slide-2d .btn.active { border-color: #e07020; background: #e07020; color: white; }
+        #slide-2d .btn-force {
+            background: #e07020;
+            border-color: #e07020;
+            color: white;
+            min-width: 90px;
+        }
+        #slide-2d .btn-force:hover { background: #c85e10; border-color: #c85e10; color: white; }
+        #slide-2d .btn-force.active { background: #6a7a8a; border-color: #6a7a8a; }
+
+        /* ===== 谢谢页面 ===== */
+        #slide-thanks {
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #slide-thanks .thanks-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+       #slide-thanks .thanks-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    text-align: center;
+    padding: 40px;
+    width: 100%;
+}
+        #slide-thanks .thanks-title {
+            font-size: 72px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 8px;
+            text-shadow: 0 0 40px rgba(255,255,255,0.15), 0 0 80px rgba(255,255,255,0.05);
+            animation: thanksPulse 3s ease-in-out infinite;
+        }
+        #slide-thanks .thanks-sub {
+            font-size: 18px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 24px;
+            letter-spacing: 4px;
+            font-weight: 300;
+        }
+        @keyframes thanksPulse {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        /* 粒子光晕 */
+        .thanks-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(100,100,255,0.06) 0%, transparent 70%);
+            z-index: 0;
+            animation: glowFloat 8s ease-in-out infinite;
+        }
+        .thanks-glow:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+        .thanks-glow:nth-child(2) { bottom: 10%; right: 10%; animation-delay: 2s; width: 400px; height: 400px; }
+        .thanks-glow:nth-child(3) { top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: 4s; width: 800px; height: 800px; opacity: 0.5; }
+        @keyframes glowFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+            25% { transform: translate(30px, -20px) scale(1.1); opacity: 1; }
+            50% { transform: translate(-20px, 30px) scale(0.9); opacity: 0.7; }
+            75% { transform: translate(10px, -10px) scale(1.05); opacity: 0.9; }
+        }
+
+        @media (max-width: 640px) {
+            #slide-3d .control-panel { width: 280px; right: 10px; top: 10px; padding: 16px; }
+            #slide-field .field-control-panel { width: 280px; right: 10px; top: 10px; padding: 16px; }
+            #slide-2d .container { padding: 16px; max-width: 95%; }
+            #slide-thanks .thanks-title { font-size: 36px; letter-spacing: 4px; }
+            .nav-arrow { width: 40px; height: 40px; font-size: 18px; }
+            .nav-arrow-left { left: 8px; }
+            .nav-arrow-right { right: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="carousel-container" id="carousel">
+    <!-- Slide 1: 3D 互动 -->
+    <div class="carousel-slide active" data-index="0" id="slide-3d">
+        <div class="slide-content">
+            <div id="canvas-container" style="width:100%;height:100%;position:absolute;top:0;left:0;z-index:1;"></div>
+            <div id="label-I" class="hud-label" style="border-color:#ffea00;position:absolute;">电流-I</div>
+            <div id="label-B" class="hud-label" style="border-color:#00e5ff;position:absolute;">磁场-B</div>
+            <div id="label-F" class="hud-label" style="border-color:#ff3d00;position:absolute;">安培力-F</div>
+            <div id="click-tip" class="instruction-tip">点击按钮放置/收回 3D 演示手</div>
+            <div class="control-panel">
+               <div class="page-title">安培力-左手定则</div>
+
+<!-- 左手定则定义框 -->
+<div class="rule-box">
+    <div class="rule-title">📖 左手定则定义</div>
+    <div class="rule-text">伸开左手，使拇指与其余四指垂直且共面，让磁感线垂直穿入手心，四指指向电流方向，则拇指所指方向即为通电导体所受安培力的方向。</div>
+</div>
+
+<div>
+    <h2>动态演示</h2>
+    <div class="subtitle">调整电流与磁感线方向，观察安培力变化。</div>
+</div>
+                <div class="warning-banner" id="parallel-warning"><strong>注意：</strong> 电流方向与磁感线平行，安培力为 0。</div>
+                <div class="control-group">
+                    <div class="control-label"><span>电流方向 (X-Z面夹角)</span><span class="value-display" id="current-angle-val">0°</span></div>
+                    <input type="range" id="current-angle" min="0" max="360" value="0">
+                </div>
+                <div class="control-group">
+                    <div class="control-label"><span>磁场方向 (Y-Z面偏角)</span><span class="value-display" id="field-angle-val">0°</span></div>
+                    <input type="range" id="field-angle" min="-90" max="90" value="0">
+                </div>
+                <div class="legend-card">
+                    <div class="legend-item"><div class="legend-color" style="background:#ffea00;"></div><span>四指指向：电流 (I)</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background:#00e5ff;"></div><span>手心迎向：磁感线 (B)</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background:#ff3d00;"></div><span>大拇指指向：安培力 (F)</span></div>
+                </div>
+                <button class="btn btn-primary" id="toggle-hand-btn"><span>放置 3D 演示手</span></button>
+                <button class="btn" id="reset-btn">重置视角与参数</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 2: 磁场（里/外） -->
+    <div class="carousel-slide" data-index="1" id="slide-field">
+        <div class="slide-content" id="field-container">
+            <div id="field-canvas-container" style="width:100%;height:100%;position:absolute;top:0;left:0;z-index:1;"></div>
+            
+            <div class="field-control-panel">
+                <div class="panel-section">
+                    <span class="section-title">1. 电流方向 (I)</span>
+                    <div class="segmented-control" id="field-current-dir-control">
+                        <button class="segment-btn" data-dir="left">向左</button>
+                        <button class="segment-btn active" data-dir="right">向右</button>
+                        <button class="segment-btn" data-dir="up">向上</button>
+                        <button class="segment-btn" data-dir="down">向下</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <span class="section-title">2. 辅助模型</span>
+                    <button class="toggle-btn active" id="field-toggle-b">
+                        <span>显示 3D 磁感线 (B)</span>
+                        <div class="toggle-indicator"></div>
+                    </button>
+                    <button class="toggle-btn" id="field-toggle-hand">
+                        <span>放置左手模型 (Hand)</span>
+                        <div class="toggle-indicator"></div>
+                    </button>
+                    <button class="toggle-btn" id="field-toggle-force">
+                        <span>显示安培力 (F)</span>
+                        <div class="toggle-indicator"></div>
+                    </button>
+                </div>
+
+                <div class="panel-section" style="margin-top: 8px;">
+                    <button class="action-btn" id="field-btn-reset-view">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+                        恢复正面 2D 视图
+                    </button>
+                </div>
+            </div>
+
+            <div class="view-indicator" id="field-view-state-text">
+                当前视角: 正面 (磁场向里 ⊗)
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 3: 通电导线 2D -->
+    <div class="carousel-slide" data-index="2" id="slide-2d">
+        <div class="slide-content" style="display:flex;align-items:center;justify-content:center;">
+            <div class="container" id="app-2d-container">
+                <h1>🧲安培力-左手定则 · <span>通电导线</span></h1>
+                <div class="canvas-wrapper">
+                    <canvas id="canvas-2d" width="700" height="400"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="ctrl-group"><span>⚡ 电流</span><button class="btn" id="btnToggleCurrent2D">⟳ 切换</button></div>
+                    <div class="ctrl-group"><span>🧭 磁场 B</span><button class="btn active" id="btnBRight2D">→</button><button class="btn" id="btnBLeft2D">←</button></div>
+                    <div class="ctrl-group"><button class="btn btn-force" id="btnToggleForce2D">▶ 显示力</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 4: 谢谢页面 -->
+    <div class="carousel-slide" data-index="3" id="slide-thanks">
+        <div class="slide-content">
+            <canvas id="thanks-canvas" class="thanks-canvas"></canvas>
+            <div class="thanks-glow"></div>
+            <div class="thanks-glow"></div>
+            <div class="thanks-glow"></div>
+            <div class="thanks-content">
+                <div class="thanks-title">谢谢大家的聆听</div>
+                <div class="thanks-sub">— 物理探索 · 左手定则 —</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 左右箭头 -->
+<button class="nav-arrow nav-arrow-left" id="navPrev">◀</button>
+<button class="nav-arrow nav-arrow-right" id="navNext">▶</button>
+
+<!-- 页码指示器 -->
+<div class="page-indicator" id="pageIndicator">
+    <button class="page-dot active" data-index="0"></button>
+    <button class="page-dot" data-index="1"></button>
+    <button class="page-dot" data-index="2"></button>
+    <button class="page-dot" data-index="3"></button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://fastly.jsdelivr.net/npm/three@0.181.1/build/three.module.js",
+    "three/addons/": "https://fastly.jsdelivr.net/npm/three@0.181.1/examples/jsm/"
+  }
+}
+</script>
+
+<!-- ===== 1. 3D 页面脚本 ===== -->
+<script type="module" id="script-3d">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+(function init3D() {
+    const container = document.getElementById('canvas-container');
+    if (!container) return;
+
+    const state = { 
+        currentAngle: 0, 
+        fieldAngle: 0, 
+        handActive: false, 
+        targetHandPos: new THREE.Vector3(0, -6, 0),
+        targetHandScale: new THREE.Vector3(0.001, 0.001, 0.001),
+        targetHandQuat: new THREE.Quaternion()
+    };
+    let scene, camera, renderer, controls, vectorI, vectorB, vectorF, conductorWire, magneticFieldLines = [], handGroup;
+    const dirI = new THREE.Vector3(), dirB = new THREE.Vector3(), dirF = new THREE.Vector3();
+
+    function getEl(id) { return document.getElementById(id); }
+    const currentAngleSlider = getEl('current-angle');
+    const fieldAngleSlider = getEl('field-angle');
+    const currentAngleVal = getEl('current-angle-val');
+    const fieldAngleVal = getEl('field-angle-val');
+    const toggleHandBtn = getEl('toggle-hand-btn');
+    const resetBtn = getEl('reset-btn');
+    const parallelWarning = getEl('parallel-warning');
+    const clickTip = getEl('click-tip');
+    const labelI = getEl('label-I');
+    const labelB = getEl('label-B');
+    const labelF = getEl('label-F');
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.015);
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(7, 5, 8);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.05; controls.maxDistance = 25; controls.minDistance = 3;
+    controls.target.set(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+    const d1 = new THREE.DirectionalLight(0xffffff, 1.5); d1.position.set(5,10,5); scene.add(d1);
+    const d2 = new THREE.DirectionalLight(0x00e5ff, 0.6); d2.position.set(-5,-3,-5); scene.add(d2);
+
+    const gridXZ = new THREE.GridHelper(10, 10, 0x444444, 0x222222); gridXZ.position.y = 0; scene.add(gridXZ);
+    const gridYZ = new THREE.GridHelper(10, 10, 0x444444, 0x222222); gridYZ.rotation.z = Math.PI/2; gridYZ.position.x = 0; scene.add(gridYZ);
+    const outlineGeo = new THREE.BoxGeometry(10,10,10); const edges = new THREE.EdgesGeometry(outlineGeo);
+    const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color:0x333333})); scene.add(outline);
+
+    function createVectorMesh(color) {
+        const g = new THREE.Group();
+        const shaftGeo = new THREE.CylinderGeometry(1,1,1,12);
+        const shaftMat = new THREE.MeshStandardMaterial({color, roughness:0.3, metalness:0.1});
+        const shaft = new THREE.Mesh(shaftGeo, shaftMat); shaft.name = "shaft"; g.add(shaft);
+        const headGeo = new THREE.ConeGeometry(2.2,1,12);
+        const headMat = new THREE.MeshStandardMaterial({color, roughness:0.3, metalness:0.1});
+        const head = new THREE.Mesh(headGeo, headMat); head.name = "head"; g.add(head);
+        shaft.position.y = 0.5; head.position.y = 1.0;
+        return g;
+    }
+    function updateVector(vg, dir, length, thickness=0.04) {
+        const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+        vg.quaternion.copy(q);
+        const shaft = vg.getObjectByName("shaft"), head = vg.getObjectByName("head");
+        const hl = 0.35, sl = Math.max(0.01, length - hl);
+        shaft.scale.set(thickness, sl, thickness); shaft.position.y = sl/2;
+        head.position.y = sl + hl/2; head.scale.set(thickness, hl, thickness);
+    }
+    vectorI = createVectorMesh(0xffdd00); vectorB = createVectorMesh(0x00e5ff); vectorF = createVectorMesh(0xff3d00);
+    scene.add(vectorI, vectorB, vectorF);
+    const wireGeo = new THREE.CylinderGeometry(0.06,0.06,10,16);
+    const wireMat = new THREE.MeshStandardMaterial({color:0xd7ccc8, roughness:0.3, metalness:0.9});
+    conductorWire = new THREE.Mesh(wireGeo, wireMat); scene.add(conductorWire);
+    const lineMat = new THREE.LineDashedMaterial({color:0x00e5ff, dashSize:0.2, gapSize:0.1, opacity:0.4, transparent:true});
+    for (let i=0; i<5; i++) {
+        const pts = [new THREE.Vector3(0,-4,0), new THREE.Vector3(0,4,0)];
+        const line = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), lineMat);
+        const offset = (i-2)*1.5; line.position.x = offset;
+        scene.add(line); magneticFieldLines.push({mesh:line, baseOffset:offset});
+    }
+
+    handGroup = new THREE.Group();
+    const faceMat = new THREE.MeshStandardMaterial({color:0x1a1a1a, roughness:0.3, metalness:0.8, flatShading:true, transparent:true, opacity:0.75});
+    const edgeMat = new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:0.8});
+    function addPart(w,h,d,px,py,pz,rx=0,ry=0,rz=0) {
+        const geo = new THREE.BoxGeometry(w,h,d); const mesh = new THREE.Mesh(geo, faceMat);
+        mesh.position.set(px,py,pz); mesh.rotation.set(rx,ry,rz);
+        const edges = new THREE.EdgesGeometry(geo); const line = new THREE.LineSegments(edges, edgeMat);
+        mesh.add(line); return mesh;
+    }
+    const palm = addPart(1.2,1.3,0.25,0,0.65,0); handGroup.add(palm);
+    const wrist = addPart(0.9,0.6,0.25,0,-0.3,0); handGroup.add(wrist);
+    function createFinger(x, baseLength, width) {
+        const fg = new THREE.Group();
+        const s1 = addPart(width, baseLength*0.45, width, 0, baseLength*0.45/2, 0); fg.add(s1);
+        const s2 = addPart(width*0.9, baseLength*0.35, width*0.9, 0, baseLength*0.45 + baseLength*0.35/2, 0); fg.add(s2);
+        const s3 = addPart(width*0.8, baseLength*0.20, width*0.8, 0, baseLength*0.45 + baseLength*0.35 + baseLength*0.20/2, 0); fg.add(s3);
+        fg.position.set(x, 1.3, 0); return fg;
+    }
+    const pinky = createFinger(-0.42,0.75,0.16); const ring = createFinger(-0.14,0.95,0.17);
+    const middle = createFinger(0.14,1.0,0.18); const index = createFinger(0.42,0.9,0.17);
+    handGroup.add(pinky, ring, middle, index);
+    const thumbGroup = new THREE.Group(); const tLen=0.75, tW=0.2;
+    const ts1 = addPart(tW, tLen*0.5, tW, 0, tLen*0.25, 0); const ts2 = addPart(tW*0.85, tLen*0.5, tW*0.85, 0, tLen*0.5+tLen*0.25, 0);
+    thumbGroup.add(ts1, ts2); thumbGroup.position.set(0.6,0.3,0); thumbGroup.rotation.z = -Math.PI/2; handGroup.add(thumbGroup);
+    handGroup.position.set(0, -6, 0);
+    handGroup.scale.set(0.001, 0.001, 0.001);
+    scene.add(handGroup);
+
+    function updatePhysics() {
+        const radI = state.currentAngle * Math.PI / 180; dirI.set(Math.cos(radI), 0, Math.sin(radI)).normalize();
+        const radB = state.fieldAngle * Math.PI / 180; dirB.set(0, Math.cos(radB), Math.sin(radB)).normalize();
+        dirF.crossVectors(dirI, dirB); const forceMag = dirF.length();
+        if (forceMag < 0.01) { parallelWarning.style.display = 'block'; dirF.set(0,0,0); } else { parallelWarning.style.display = 'none'; dirF.normalize(); }
+        updateVector(vectorI, dirI, 2.8, 0.06); updateVector(vectorB, dirB, 2.8, 0.06); updateVector(vectorF, dirF, 2.8 * forceMag, 0.08);
+        const alignWire = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dirI);
+        conductorWire.quaternion.copy(alignWire);
+        const alignField = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dirB);
+        magneticFieldLines.forEach(line => { line.mesh.quaternion.copy(alignField); const perp = new THREE.Vector3(1,0,0).projectOnPlane(dirB).normalize(); line.mesh.position.copy(perp.multiplyScalar(line.baseOffset)); });
+        let targetFDir = dirF.clone();
+        if (forceMag < 0.01) { targetFDir.copy(dirI).cross(new THREE.Vector3(0,1,0)); if (targetFDir.lengthSq()<0.01) targetFDir.copy(dirI).cross(new THREE.Vector3(0,0,1)); targetFDir.normalize(); }
+        const uY = dirI.clone().normalize(); const uX = targetFDir.clone().normalize(); const uZ = new THREE.Vector3().crossVectors(uX, uY).normalize();
+        const orientationMatrix = new THREE.Matrix4(); orientationMatrix.makeBasis(uX, uY, uZ);
+        state.targetHandQuat.setFromRotationMatrix(orientationMatrix);
+    }
+
+    function toggleHandState() {
+        state.handActive = !state.handActive;
+        if (state.handActive) {
+            state.targetHandPos.set(0, 0, 0);
+            state.targetHandScale.set(1.2, 1.2, 1.2);
+            updatePhysics();
+            handGroup.quaternion.copy(state.targetHandQuat);
+            handGroup.position.copy(state.targetHandPos);
+            handGroup.scale.copy(state.targetHandScale);
+            toggleHandBtn.innerText = "收回 3D 演示手";
+            toggleHandBtn.classList.remove('btn-primary');
+            clickTip.innerText = "手已放置，点击按钮收回";
+        } else {
+            state.targetHandPos.set(0, -6, 0);
+            state.targetHandScale.set(0.001, 0.001, 0.001);
+            handGroup.position.copy(state.targetHandPos);
+            handGroup.scale.copy(state.targetHandScale);
+            toggleHandBtn.innerText = "放置 3D 演示手";
+            toggleHandBtn.classList.add('btn-primary');
+            clickTip.innerText = "点击按钮放置 3D 演示手";
+        }
+    }
+
+    function resetSimulation() {
+        state.currentAngle = 0; state.fieldAngle = 0; currentAngleSlider.value = 0; fieldAngleSlider.value = 0;
+        currentAngleVal.innerText = "0°"; fieldAngleVal.innerText = "0°";
+        if (state.handActive) toggleHandState();
+        controls.target.set(0,0,0); camera.position.set(7,5,8); controls.update(); updatePhysics();
+    }
+
+    function updateLabels() {
+        // 标签位置：放在箭头尾部附近（距离原点0.8-1.0的位置），避免遮挡箭头尖端
+        function upd(el, vg, dist) {
+            // dist改为较小的值，让标签靠近箭头尾部
+            const tipLocal = new THREE.Vector3(0, 0.8, 0);
+            const tipWorld = tipLocal.applyMatrix4(vg.matrixWorld);
+            const sp = tipWorld.clone().project(camera);
+            if (sp.z > 1) { el.style.display = 'none'; return; }
+            el.style.display = 'block';
+            const x = (sp.x * 0.5 + 0.5) * container.clientWidth;
+            const y = (sp.y * -0.5 + 0.5) * container.clientHeight;
+            el.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
+        }
+        upd(labelI, vectorI, 0.8);
+        upd(labelB, vectorB, 0.8);
+        upd(labelF, vectorF, 0.8);
+    }
+
+    toggleHandBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleHandState(); });
+    resetBtn.addEventListener('click', resetSimulation);
+
+    currentAngleSlider.addEventListener('input', (e) => { state.currentAngle = parseFloat(e.target.value); currentAngleVal.innerText = `${state.currentAngle}°`; updatePhysics(); if (state.handActive) { handGroup.quaternion.copy(state.targetHandQuat); } });
+    fieldAngleSlider.addEventListener('input', (e) => { state.fieldAngle = parseFloat(e.target.value); fieldAngleVal.innerText = `${state.fieldAngle}°`; updatePhysics(); if (state.handActive) { handGroup.quaternion.copy(state.targetHandQuat); } });
+
+    window.addEventListener('resize', () => { camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(container.clientWidth, container.clientHeight); });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update(); renderer.render(scene, camera); updateLabels();
+    }
+    updatePhysics(); animate();
+})();
+</script>
+
+<!-- ===== 2. 磁场（里/外）页面脚本 ===== -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+(function initFieldPage() {
+    const container = document.getElementById('field-canvas-container');
+    if (!container) return;
+
+    const state = {
+        currentDir: 'right',
+        showBField: true,
+        showHand: false,
+        showForce: false,
+        handScaleTarget: 0,
+        forceScaleTarget: 0,
+        bFieldOpacityTarget: 1.0
+    };
+
+    const dirButtons = container.parentElement.querySelectorAll('#field-current-dir-control .segment-btn');
+    const btnToggleB = container.parentElement.querySelector('#field-toggle-b');
+    const btnToggleHand = container.parentElement.querySelector('#field-toggle-hand');
+    const btnToggleForce = container.parentElement.querySelector('#field-toggle-force');
+    const btnResetView = container.parentElement.querySelector('#field-btn-reset-view');
+    const viewStateText = container.parentElement.querySelector('#field-view-state-text');
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x050507, 0.015);
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 0, 8);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x050507, 1);
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 4;
+    controls.maxDistance = 15;
+    controls.enablePan = false;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(5, 5, 10);
+    camera.add(dirLight);
+    scene.add(camera);
+
+    const gridHelper = new THREE.GridHelper(30, 30, 0x111115, 0x111115);
+    gridHelper.rotation.x = Math.PI / 2;
+    gridHelper.position.z = -4;
+    scene.add(gridHelper);
+
+    let bFieldGroup, bRaysGroup, xMarksGroup, dotMarksGroup;
+    let wireMesh, currentArrow, forceArrow;
+    let handGroup;
+
+    function createLabelSprite(text, color = '#ffffff') {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 128, 128);
+        ctx.font = 'bold 72px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 64, 64);
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(0.6, 0.6, 1);
+        return sprite;
+    }
+
+    const planeGeom = new THREE.PlaneGeometry(6.5, 6.5);
+    const planeMat = new THREE.MeshBasicMaterial({
+        color: 0x0a0a0f,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+        depthWrite: true
+    });
+    const paperPlane = new THREE.Mesh(planeGeom, planeMat);
+    scene.add(paperPlane);
+
+    const borderGeom = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-3.25, -3.25, 0),
+        new THREE.Vector3(3.25, -3.25, 0),
+        new THREE.Vector3(3.25, 3.25, 0),
+        new THREE.Vector3(-3.25, 3.25, 0),
+        new THREE.Vector3(-3.25, -3.25, 0)
+    ]);
+    const borderMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const paperOutline = new THREE.Line(borderGeom, borderMat);
+    paperOutline.position.z = 0.001;
+    scene.add(paperOutline);
+
+    const bLabel = createLabelSprite("B", "#ffffff");
+    bLabel.position.set(2.9, 2.9, 0.05);
+    scene.add(bLabel);
+
+    bFieldGroup = new THREE.Group();
+    bRaysGroup = new THREE.Group();
+    xMarksGroup = new THREE.Group();
+    dotMarksGroup = new THREE.Group();
+    bFieldGroup.add(bRaysGroup);
+    bFieldGroup.add(xMarksGroup);
+    bFieldGroup.add(dotMarksGroup);
+    scene.add(bFieldGroup);
+
+    const extent = 2.4;
+    const steps = 4;
+    const zStart = 2.5;
+    const zEnd = -2.5;
+    const rayMat = new THREE.LineBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.3 });
+    const coneMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+    const markMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const coneGeom = new THREE.ConeGeometry(0.06, 0.2, 6);
+    coneGeom.rotateX(-Math.PI / 2);
+
+    for (let i = 0; i < steps; i++) {
+        for (let j = 0; j < steps; j++) {
+            const x = -extent + (i / (steps - 1)) * extent * 2;
+            const y = -extent + (j / (steps - 1)) * extent * 2;
+            if (Math.abs(x) < 0.6 && Math.abs(y) < 0.6) continue;
+
+            const lineGeom = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(x, y, zStart),
+                new THREE.Vector3(x, y, zEnd)
+            ]);
+            const line = new THREE.Line(lineGeom, rayMat);
+            const cone = new THREE.Mesh(coneGeom, coneMat);
+            cone.position.set(x, y, zEnd + 0.2);
+            bRaysGroup.add(line);
+            bRaysGroup.add(cone);
+
+            const xCoords = new Float32Array([
+                -0.12, -0.12, 0, 0.12, 0.12, 0,
+                -0.12, 0.12, 0, 0.12, -0.12, 0
+            ]);
+            const xGeom = new THREE.BufferGeometry();
+            xGeom.setAttribute('position', new THREE.BufferAttribute(xCoords, 3));
+            const xMark = new THREE.LineSegments(xGeom, markMat);
+            xMark.position.set(x, y, 0.02);
+            xMarksGroup.add(xMark);
+
+            const dotGroup = new THREE.Group();
+            const ringGeom = new THREE.RingGeometry(0.096, 0.12, 16);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            const dotGeom2 = new THREE.CircleGeometry(0.03, 8);
+            const dot = new THREE.Mesh(dotGeom2, ringMat);
+            dotGroup.add(ring, dot);
+            dotGroup.position.set(x, y, -0.02);
+            dotMarksGroup.add(dotGroup);
+        }
+    }
+
+    const wireGeom = new THREE.CylinderGeometry(0.04, 0.04, 5.0, 8);
+    const wireMat = new THREE.MeshStandardMaterial({ color: 0x444446});
+    wireMesh = new THREE.Mesh(wireGeom, wireMat);
+    scene.add(wireMesh);
+
+    currentArrow = new THREE.ArrowHelper(
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(0, 0, 0),
+        2.2, 0xff9500, 0.4, 0.25
+    );
+    scene.add(currentArrow);
+    const iLabel = createLabelSprite("I", "#ff9500");
+    iLabel.position.set(1.5, 0.3, 0.1);
+    currentArrow.add(iLabel);
+
+    forceArrow = new THREE.ArrowHelper(
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, 0, 0),
+        2.2, 0x34c759, 0.4, 0.25
+    );
+    forceArrow.scale.set(0, 0, 0);
+    scene.add(forceArrow);
+    const fLabel = createLabelSprite("F", "#34c759");
+    fLabel.position.set(0.3, 1.5, 0.1);
+    forceArrow.add(fLabel);
+
+    handGroup = new THREE.Group();
+    const matFill = new THREE.MeshStandardMaterial({
+        color: 0x222225,
+        roughness: 0.8,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.6,
+        depthWrite: true
+    });
+    const matWire = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.4
+    });
+
+    function addPart(geometry, pos, rot = [0, 0, 0]) {
+        const subGroup = new THREE.Group();
+        const meshFill = new THREE.Mesh(geometry, matFill);
+        const meshWire = new THREE.Mesh(geometry, matWire);
+        subGroup.add(meshFill, meshWire);
+        subGroup.position.copy(pos);
+        subGroup.rotation.set(rot[0], rot[1], rot[2]);
+        handGroup.add(subGroup);
+    }
+
+    const palmGeom = new THREE.BoxGeometry(1.0, 1.2, 0.2);
+    addPart(palmGeom, new THREE.Vector3(0, 0, 0));
+
+    const fingerGeom = new THREE.CylinderGeometry(0.08, 0.08, 0.9, 8);
+    const fingerXOffsets = [-0.35, -0.1, 0.15, 0.4];
+    const fingerYScales = [1.0, 1.1, 1.05, 0.9];
+    for (let i = 0; i < 4; i++) {
+        const geom = fingerGeom.clone();
+        geom.scale(1, fingerYScales[i], 1);
+        const length = 0.9 * fingerYScales[i];
+        const yPos = 0.6 + length / 2;
+        addPart(geom, new THREE.Vector3(fingerXOffsets[i], yPos, 0));
+    }
+
+    const thumbGeom = new THREE.CylinderGeometry(0.09, 0.09, 0.7, 8);
+    thumbGeom.rotateZ(Math.PI / 2);
+    addPart(thumbGeom, new THREE.Vector3(-0.8, -0.1, 0));
+
+    handGroup.scale.set(0, 0, 0);
+    scene.add(handGroup);
+
+    function updatePhysicsState() {
+        let iDir = new THREE.Vector3();
+        let fDir = new THREE.Vector3();
+        let handRotZ = 0;
+        let wireRotZ = 0;
+
+        switch (state.currentDir) {
+            case 'right': iDir.set(1, 0, 0); fDir.set(0, 1, 0); handRotZ = -Math.PI / 2; wireRotZ = Math.PI / 2; break;
+            case 'left': iDir.set(-1, 0, 0); fDir.set(0, -1, 0); handRotZ = Math.PI / 2; wireRotZ = Math.PI / 2; break;
+            case 'up': iDir.set(0, 1, 0); fDir.set(-1, 0, 0); handRotZ = 0; wireRotZ = 0; break;
+            case 'down': iDir.set(0, -1, 0); fDir.set(1, 0, 0); handRotZ = Math.PI; wireRotZ = 0; break;
+        }
+
+        wireMesh.rotation.z = wireRotZ;
+        currentArrow.setDirection(iDir);
+        const iLabel2 = currentArrow.children[0];
+        if (state.currentDir === 'left' || state.currentDir === 'right') {
+            iLabel2.position.set(1.5 * iDir.x, 0.3, 0.1);
+        } else {
+            iLabel2.position.set(0.3, 1.5 * iDir.y, 0.1);
+        }
+
+        forceArrow.setDirection(fDir);
+        const fLabel2 = forceArrow.children[0];
+        if (fDir.x !== 0) {
+            fLabel2.position.set(1.5 * fDir.x, 0.3, 0.1);
+        } else {
+            fLabel2.position.set(0.3, 1.5 * fDir.y, 0.1);
+        }
+
+        handGroup.rotation.z = handRotZ;
+    }
+
+    function resetCamera() {
+        camera.position.set(0, 0, 8);
+        controls.target.set(0, 0, 0);
+        controls.update();
+    }
+
+    dirButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            dirButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.currentDir = btn.dataset.dir;
+            updatePhysicsState();
+        });
+    });
+
+    btnToggleB.addEventListener('click', () => {
+        state.showBField = !state.showBField;
+        btnToggleB.classList.toggle('active', state.showBField);
+        state.bFieldOpacityTarget = state.showBField ? 1.0 : 0.0;
+    });
+
+    btnToggleHand.addEventListener('click', () => {
+        state.showHand = !state.showHand;
+        btnToggleHand.classList.toggle('active', state.showHand);
+        state.handScaleTarget = state.showHand ? 1.0 : 0.0;
+    });
+
+    btnToggleForce.addEventListener('click', () => {
+        state.showForce = !state.showForce;
+        btnToggleForce.classList.toggle('active', state.showForce);
+        state.forceScaleTarget = state.showForce ? 1.0 : 0.0;
+    });
+
+    btnResetView.addEventListener('click', resetCamera);
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+
+        const hScale = handGroup.scale.x;
+        const nHScale = THREE.MathUtils.lerp(hScale, state.handScaleTarget, 0.15);
+        handGroup.scale.set(nHScale, nHScale, nHScale);
+
+        const fScale = forceArrow.scale.x;
+        const nFScale = THREE.MathUtils.lerp(fScale, state.forceScaleTarget, 0.15);
+        forceArrow.scale.set(nFScale, nFScale, nFScale);
+        
+
+        const currentB = bRaysGroup.children.length > 0 && bRaysGroup.children[0].material ? bRaysGroup.children[0].material.opacity : 0;
+        const nextB = THREE.MathUtils.lerp(currentB, state.bFieldOpacityTarget * 0.3, 0.15);
+        bRaysGroup.children.forEach(child => { if (child.material) child.material.opacity = nextB; });
+        const nextCone = THREE.MathUtils.lerp(0.3, state.bFieldOpacityTarget, 0.15);
+        xMarksGroup.children.forEach(child => { child.material.opacity = nextCone; });
+        dotMarksGroup.children.forEach(group => {
+            group.children.forEach(mesh => { mesh.material.opacity = nextCone; });
+        });
+
+        const viewDir = new THREE.Vector3();
+        camera.getWorldDirection(viewDir);
+        if (viewDir.z > 0.1) {
+            viewStateText.innerText = "当前视角: 背面 (磁场向外 ⊙)";
+        } else if (viewDir.z < -0.1) {
+            viewStateText.innerText = "当前视角: 正面 (磁场向里 ⊗)";
+        } else {
+            viewStateText.innerText = "当前视角: 侧面 3D 空间";
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    updatePhysicsState();
+    animate();
+})();
+</script>
+
+<!-- ===== 3. 通电导线 2D页面脚本 ===== -->
+<script>
+    (function() {
+        const canvas = document.getElementById('canvas-2d');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        let currentDir = 1, fieldDir = 1, showForce = false;
+
+        const btnForce = document.getElementById('btnToggleForce2D');
+
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            const cx = W/2, cy = H/2;
+            const fieldColor = '#4fc3f7';
+            const arrowLen = 30, headLen = 10, headW = 7;
+            const dirX = fieldDir;
+            const points = [[-220,-60],[-220,0],[-220,60],[-140,-60],[-140,0],[-140,60],[140,-60],[140,0],[140,60],[220,-60],[220,0],[220,60],[-180,-110],[-180,110],[180,-110],[180,110],[-260,-30],[-260,30],[260,-30],[260,30],[-80,-130],[80,-130],[-80,130],[80,130]];
+            points.forEach(([dx,dy]) => {
+                const px = cx+dx, py = cy+dy;
+                ctx.beginPath(); ctx.moveTo(px - dirX*arrowLen/2, py); ctx.lineTo(px + dirX*arrowLen/2, py);
+                ctx.strokeStyle = fieldColor; ctx.lineWidth = 2.8; ctx.stroke();
+                const tipX = px + dirX*arrowLen/2;
+                ctx.beginPath(); ctx.moveTo(tipX, py); ctx.lineTo(tipX - dirX*headLen, py - headW/2); ctx.lineTo(tipX - dirX*headLen, py + headW/2); ctx.closePath();
+                ctx.fillStyle = fieldColor; ctx.fill();
+            });
+            ctx.font = 'bold 18px "Segoe UI", sans-serif'; ctx.fillStyle = '#29b6f6'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(fieldDir===1?'B →':'B ←', cx+280, cy-100);
+
+            const grad = ctx.createRadialGradient(cx-10, cy-8, 6, cx, cy, 44);
+            grad.addColorStop(0, '#ffd54f'); grad.addColorStop(0.5, '#ffb300'); grad.addColorStop(0.8, '#f9a825'); grad.addColorStop(1, '#f57f17');
+            ctx.beginPath(); ctx.ellipse(cx, cy, 42, 24, 0, 0, Math.PI*2); ctx.fillStyle = grad; ctx.fill();
+            ctx.strokeStyle = '#e65100'; ctx.lineWidth = 2.2; ctx.stroke();
+            ctx.beginPath(); ctx.ellipse(cx-10, cy-14, 18, 6, 0.15, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,242,200,0.6)'; ctx.fill();
+            ctx.font = 'bold 48px "Segoe UI", "Arial Unicode MS", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#1a237e'; ctx.fillText(currentDir===1?'⊗':'⊙', cx, cy-2);
+            ctx.beginPath(); ctx.arc(cx-60, cy, 8, 0, Math.PI*2); ctx.fillStyle = '#ffca28'; ctx.fill(); ctx.strokeStyle = '#e65100'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.beginPath(); ctx.arc(cx+60, cy, 8, 0, Math.PI*2); ctx.fillStyle = '#ffca28'; ctx.fill(); ctx.stroke();
+            ctx.font = 'bold 15px "Segoe UI", sans-serif'; ctx.fillStyle = '#e3f2fd'; ctx.fillText('I', cx-84, cy-28);
+
+            if (showForce) {
+                const forceDir = currentDir * fieldDir;
+                const fLen = 68, fHead = 20, fWid = 13, fy = forceDir;
+                const startX = cx, startY = cy + (fy>0?28:-28);
+                ctx.shadowColor = 'rgba(255, 60, 60, 0.4)'; ctx.shadowBlur = 24;
+                ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(startX, startY + fy*fLen);
+                ctx.strokeStyle = '#ff5252'; ctx.lineWidth = 6; ctx.stroke();
+                const tipX = startX, tipY = startY + fy*fLen;
+                ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(tipX - fWid/2, tipY - fy*fHead); ctx.lineTo(tipX + fWid/2, tipY - fy*fHead); ctx.closePath();
+                ctx.fillStyle = '#ff5252'; ctx.shadowBlur = 28; ctx.fill(); ctx.shadowBlur = 0;
+                ctx.font = 'bold 26px "Segoe UI", sans-serif'; ctx.fillStyle = '#ff1744'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const offY = fy>0?46:-46; ctx.fillText('F', startX+42, startY + fy*fLen/2 + offY*0.5);
+            }
+        }
+
+        function toggleCurrent() { currentDir *= -1; draw(); }
+        function setField(dir) { fieldDir = dir; document.getElementById('btnBRight2D').classList.toggle('active', dir===1); document.getElementById('btnBLeft2D').classList.toggle('active', dir===-1); draw(); }
+        function toggleForce() { showForce = !showForce; btnForce.textContent = showForce?'✕ 移除力':'▶ 显示力'; btnForce.classList.toggle('active', showForce); draw(); }
+
+        document.getElementById('btnToggleCurrent2D').addEventListener('click', toggleCurrent);
+        document.getElementById('btnBRight2D').addEventListener('click', ()=>setField(1));
+        document.getElementById('btnBLeft2D').addEventListener('click', ()=>setField(-1));
+        document.getElementById('btnToggleForce2D').addEventListener('click', toggleForce);
+        draw();
+    })();
+</script>
+
+<!-- ===== 4. 谢谢页面粒子特效 ===== -->
+<script>
+    (function() {
+        const canvas = document.getElementById('thanks-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+        const particleCount = 120;
+
+        function resize() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            width = canvas.width = rect.width;
+            height = canvas.height = rect.height;
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.opacity = Math.random() * 0.5 + 0.2;
+                this.pulseSpeed = Math.random() * 0.02 + 0.01;
+                this.pulseOffset = Math.random() * Math.PI * 2;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > width) { this.speedX *= -1; }
+                if (this.y < 0 || this.y > height) { this.speedY *= -1; }
+                // 脉动
+                this.currentOpacity = this.opacity + Math.sin(Date.now() * this.pulseSpeed + this.pulseOffset) * 0.15;
+                this.currentOpacity = Math.max(0.05, Math.min(0.8, this.currentOpacity));
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.currentOpacity})`;
+                ctx.fill();
+                // 发光
+                if (this.size > 1.5) {
+                    ctx.shadowColor = `rgba(255, 255, 255, ${this.currentOpacity * 0.3})`;
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+
+        // 连线效果
+        function drawConnections() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 150) {
+                        const opacity = (1 - dist / 150) * 0.15;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            drawConnections();
+            requestAnimationFrame(animateParticles);
+        }
+
+        resize();
+        initParticles();
+        animateParticles();
+
+        window.addEventListener('resize', () => {
+            resize();
+            initParticles();
+        });
+    })();
+</script>
+
+<!-- ===== 轮播切换 ===== -->
+<script>
+    (function() {
+        const slides = document.querySelectorAll('.carousel-slide');
+        const dots = document.querySelectorAll('.page-dot');
+        const prevBtn = document.getElementById('navPrev');
+        const nextBtn = document.getElementById('navNext');
+        let currentIndex = 0;
+        const total = slides.length;
+
+        function goTo(index) {
+            if (index < 0) index = total - 1;
+            if (index >= total) index = 0;
+            slides.forEach((s, i) => s.classList.toggle('active', i === index));
+            dots.forEach((d, i) => d.classList.toggle('active', i === index));
+            currentIndex = index;
+        }
+
+        prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
+        nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
+
+        dots.forEach((dot) => {
+            dot.addEventListener('click', () => {
+                const idx = parseInt(dot.dataset.index);
+                if (!isNaN(idx)) goTo(idx);
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') { goTo(currentIndex - 1); e.preventDefault(); }
+            if (e.key === 'ArrowRight') { goTo(currentIndex + 1); e.preventDefault(); }
+        });
+
+        let touchStartX = 0;
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        document.addEventListener('touchend', (e) => {
+            const diff = touchStartX - e.changedTouches[0].screenX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) goTo(currentIndex + 1);
+                else goTo(currentIndex - 1);
+            }
+        });
+
+        goTo(0);
+    })();
+</script>
+
+</body>
+</html>
